@@ -54,10 +54,15 @@ function getQuestions() {
 
 let questions = [];
 // Fetch questions from database and store them in questions array
+// questions[0].question will get the first question from the array
+// questions[0].option1 will get the option for the first question
+// questions[0].answer will get the answer for the first question
 getQuestions().then((fetchedQuestions) => {
   questions = fetchedQuestions;
+//   console.log('Questions fetched:', questions);
+//   console.log('Questions count:', questions.length);
+//   console.log('First question:', questions[0]);
 });
-console.log(questions);
 
 // Route for starting the game
 app.post('/start-game', (req, res) => {
@@ -65,7 +70,10 @@ app.post('/start-game', (req, res) => {
     // Send timer duration to clients
     io.emit('game-started', true);
     io.emit('question', questions[0]);
-    io.emit('options', questions[0].options);
+    io.emit('option1', questions[0].option1);
+    io.emit('option2', questions[0].option2);
+    io.emit('option3', questions[0].option3);
+    io.emit('option4', questions[0].option4);
     io.emit('timer', 10);
 });
 
@@ -80,6 +88,19 @@ app.post('/submit-answer', (req, res) => {
       isCorrect = true;
     }
     io.emit('answer', { playerId, isCorrect });
+});
+
+// Route for getting next question for all players
+app.post('/next-question', (req, res) => {
+  const { questionId } = req.body;
+  // Send next question and options to clients
+  // Send timer duration to clients
+  io.emit('question', questions[questionId]);
+  io.emit('option1', questions[questionId].option1);
+  io.emit('option2', questions[questionId].option2);
+  io.emit('option3', questions[questionId].option3);
+  io.emit('option4', questions[questionId].option4);
+  io.emit('timer', 10);
 });
 
 server.listen(port, () => {

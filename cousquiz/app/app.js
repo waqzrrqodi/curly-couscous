@@ -43,6 +43,22 @@ $(document).ready(function() {
         // Handle response - update UI with result and score
       });
     }
+
+    // Function to get next question
+    function nextQuestion(questionId) {
+      $.post('/next-question', { questionId }, function(data) {
+        // Display next question and options on the UI
+        displayQuestion(data.question);
+        displayOptions(data.options);
+        startTimer(data.timerDuration);
+      });
+    }
+
+    // Event listener for option selection
+    $('#options').on('click', 'li', function() {
+      const selectedOption = $(this).text();
+      submitAnswer(playerId, questionId, selectedOption);
+    });
   
     // Function to display question
     function displayQuestion(question) {
