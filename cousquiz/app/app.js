@@ -1,4 +1,5 @@
 $(document).ready(function() {
+    // Initialize the WebSocket connection
     const socket = io('http://localhost:3000'); // Connect to the WebSocket server
   
     // Disable Start Game button initially
@@ -24,6 +25,46 @@ $(document).ready(function() {
       // Display players count on the UI with text before it
         $('#players').text(`Players: ${playersCount}`);
     });
+
+    socket.on('game-started', function() {
+  // Handle game start event
+  console.log('Game started');
+
+  // Listen for the 'question' event
+  socket.on('question', function(question) {
+    // Update the UI with the received question
+    $('#question').text(question);
+  });
+
+  // Listen for the 'options' event
+  socket.on('option1', function(option1) {
+    // Update the UI with the received option
+    $('#option1').text(option1);
+  });
+
+  // Listen for the 'options' event
+  socket.on('option2', function(option2) {
+    // Update the UI with the received option
+    $('#option2').text(option2);
+  });
+
+  // Listen for the 'options' event
+  socket.on('option3', function(option3) {
+    // Update the UI with the received option
+    $('#option3').text(option3);
+  });
+
+  socket.on('option4', function(option4) {
+    // Update the UI with the received option
+    $('#option4').text(option4);
+  });
+
+  // Listen for the 'timer' event
+  socket.on('timer', function(timerDuration) {
+    // Start the timer with the received duration
+    startTimer(timerDuration);
+  });
+});
   
     // Function to fetch questions and start the game
     function startGame() {
@@ -76,19 +117,35 @@ $(document).ready(function() {
     }
   
     // Function to start timer
-    function startTimer(duration) {
-      // Implement timer logic
-      let timer = duration;
-        const $timer = $('#timer');
-        $timer.text(timer);
-        const interval = setInterval(() => {
-          timer--;
-          $timer.text(timer);
-          if (timer === 0) {
-            clearInterval(interval);
-            // Implement logic for timeout
-          }
-        }, 1000);
+function startTimer(duration) {
+  // Implement timer logic
+  let timer = duration * 100; // Multiply by 10 to get timer in tenths of a second
+  const $timer = $('#timer');
+  const $progressBar = $('#timerBar'); // Get the progress bar
+  $timer.text(timer / 100); // Divide by 10 to display timer in seconds
+  $progressBar.attr('max', duration * 100); // Set the max value of the progress bar to the duration in tenths of a second
+  $progressBar.val(0); // Set the initial value of the progress bar to 0
+  const interval = setInterval(() => {
+    timer--;
+    $timer.text(timer / 100); // Divide by 10 to display timer in seconds
+    $progressBar.val(duration * 100 - timer); // Update the value of the progress bar
+
+    // Check if the remaining percentage is 30% or less
+    if ((timer / (duration * 100)) * 100 <= 30) {
+      // Change the color of the progress bar to 'danger'
+      $progressBar.removeClass('is-primary').addClass('is-danger');
     }
+
+    if (timer === 0) {
+      clearInterval(interval);
+      // Implement logic for timeout
+    }
+  }, 10); // Update every 100 milliseconds
+}
+
+  $('#testButton').click(function() {
+    console.log('Test button clicked');
+    startTimer(10); // Start the timer with a duration of 10 seconds
+  });
   });
   
