@@ -22,6 +22,8 @@ connection.connect();
 app.use(express.json());
 
 let playersCount = 0;
+let playerIds = ['bob', 'seb', 'joe', 'holgis', 'mike', 'dave', 'dave-clone'];
+let playerScores = [];
 
 // WebSocket connection handling
 io.on('connection', (socket) => {
@@ -29,6 +31,11 @@ io.on('connection', (socket) => {
   console.log('A user connected');
   console.log('Players count:', playersCount);
   io.emit('players-count', playersCount); // Send players count to all clients
+  let playerId = playerIds[playersCount - 1];
+  socket.playerId = playerId;
+  io.emit('player-id', playerId); // Send playerId to client
+
+  console.log('Assigned playerId:', playerId);
 
   socket.on('disconnect', () => {
     playersCount--;
@@ -72,6 +79,7 @@ app.post('/start-game', (req, res) => {
     console.log('First question:', questions[0].question);
     io.emit('game-started', true);
     io.emit('question', questions[0].question);
+    io.emit('questionId', questions[0].id)
     io.emit('option1', questions[0].option1);
     io.emit('option2', questions[0].option2);
     io.emit('option3', questions[0].option3);

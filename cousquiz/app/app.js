@@ -1,9 +1,11 @@
 $(document).ready(function() {
     // Initialize the WebSocket connection
     const socket = io('http://localhost:3000'); // Connect to the WebSocket server
+    let questionId;
   
     // Disable Start Game button initially
     $('#start-game-btn').prop('disabled', true);
+    $('#game').hide();
   
     // Function to enable Start Game button if at least 2 players have joined
     function updateStartButton(playersCount) {
@@ -16,6 +18,8 @@ $(document).ready(function() {
   
     // Event listener for Start Game button
     $('#start-game-btn').click(function() {
+      $('#lobby').hide();
+        $('#game').show();
       startGame();
     });
   
@@ -25,6 +29,13 @@ $(document).ready(function() {
       // Display players count on the UI with text before it
         $('#players').text(`Players: ${playersCount}`);
     });
+
+    // Listen for 'player-id' event from the server
+socket.on('player-id', function(playerId) {
+  // Display playerId on the UI
+  $('.username').text(`Username: ${playerId}`);
+}
+);
 
     socket.on('game-started', function() {
   // Handle game start event
@@ -70,18 +81,10 @@ $(document).ready(function() {
     function startGame() {
       $.post('http://localhost:3000/start-game', function(data) {
         // Display game UI with questions and options
-        $('#lobby').hide();
-        $('#game').show();
         displayQuestion(data.question);
         displayOptions(data.options);
         startTimer(data.timerDuration);
-      });
-    }
-  
-    // Function to submit answer
-    function submitAnswer(playerId, questionId, selectedOption) {
-      $.post('/submit-answer', { playerId, questionId, selectedOption }, function(data) {
-        // Handle response - update UI with result and score
+        questionId = data.questionId;
       });
     }
 
@@ -96,10 +99,18 @@ $(document).ready(function() {
     }
 
     // Event listener for option selection
-    $('#options').on('click', 'li', function() {
-      const selectedOption = $(this).text();
-      submitAnswer(playerId, questionId, selectedOption);
+    let optionButtons = ['option1', 'option2', 'option3', 'option4'];
+
+    optionButtons.forEach(function(optionId, playerId, questionId) {
+      let button = document.getElementById(optionId);
+
+      button.addEventListener('click', function() {
+        
+        let selectedOption = optionId;
+        socket.emit('submit-answer', { playerId, questionId, selectedOption });
+      });
     });
+  
   
     // Function to display question
     function displayQuestion(question) {
