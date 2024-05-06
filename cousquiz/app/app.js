@@ -23,6 +23,11 @@ $(document).ready(function() {
         $('#game').show();
       startGame();
     });
+
+    // Event listener for Next Question button
+    $('#next-question-btn').click(function() {
+      nextQuestion();
+    });
   
     // Listen for 'players-count' event from the server
     socket.on('players-count', function(playersCount) {
@@ -57,6 +62,30 @@ socket.on('player-id', function(id) {
     // Update the UI with the received answer
     // $('#answer').text(answer);
     console.log('Answer:', answer);
+  });
+
+  socket.on('all-answers', function(playerAnswers) {
+    // Update the UI with the received answers
+    $('#question').hide();
+    ['option1', 'option2', 'option3', 'option4'].forEach(function(optionId) {
+      $('#' + optionId).hide();
+    });
+
+    // Display the answers
+
+    // example of how the answers display:
+    // Player answers: [
+//   { playerId: 'seb', isCorrect: true },
+//   { playerId: 'joe', isCorrect: true },
+//   { playerId: 'joe', isCorrect: false },
+//   { playerId: 'seb', isCorrect: true }
+// ]
+$('#playerAnswers').show().html(
+  playerAnswers.map(answer => {
+    let emoji = answer.isCorrect ? '✔️' : '❌';
+    return `<p>${answer.playerId}: ${emoji}</p>`;
+  }).join('')
+);
   });
 
   // Listen for the 'options' event
@@ -108,6 +137,11 @@ socket.on('player-id', function(id) {
           console.log('Player ID:', playerId);
           console.log('Question ID:', questionId);
           socket.emit('submit-answer', { playerId, questionId, selectedOption });
+
+          // Disable all option buttons after selecting an option
+          optionButtons.forEach(function(optionId) {
+            document.getElementById(optionId).disabled = true;
+          });
         });
       });
       
@@ -117,6 +151,15 @@ socket.on('player-id', function(id) {
     // Function to fetch questions and start the game
     function startGame() {
       $.post('http://localhost:3000/start-game', function(data) {
+        // Display game UI with questions and options
+        displayQuestion(data.question);
+        displayOptions(data.options);
+        startTimer(data.timerDuration);
+      });
+    }
+
+    function nextQuestion() {
+      $.post('http://localhost:3000/next-question', function(data) {
         // Display game UI with questions and options
         displayQuestion(data.question);
         displayOptions(data.options);

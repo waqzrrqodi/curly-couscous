@@ -22,9 +22,11 @@ connection.connect();
 app.use(express.json());
 
 let playersCount = 0;
+let questionCount = 0;
 let playerIds = ['bob', 'seb', 'joe', 'holgis', 'mike', 'dave', 'dave-clone'];
 let usedPlayerIds = [];
 let playerScores = [];
+let playerAnswers = [];
 
 // WebSocket connection handling
 io.on('connection', (socket) => {
@@ -38,9 +40,17 @@ io.on('connection', (socket) => {
   }
   usedPlayerIds.push(playerId);
   socket.playerId = playerId;
-  socket.emit('player-id', playerId); // Send playerId to client
+
+  // Generate random number between 0 and 99
+  let randomNum = Math.floor(Math.random() * 100);
+
+  // Add the random numbers to the player's name
+  let playerName = playerId + randomNum.toString()
+
+  socket.emit('player-id', playerName); // Send playerId to client
 
   console.log('Assigned playerId:', playerId);
+  console.log('Assigned playerName:', playerName);
 
   socket.on('disconnect', () => {
     playersCount--;
@@ -58,6 +68,14 @@ io.on('connection', (socket) => {
       isCorrect = true;
     }
 
+    playerAnswers.push({ playerId, isCorrect});
+
+    if (playerAnswers.length === playersCount) {
+      // Calculate scores
+      io.emit('all-answers', playerAnswers);
+      playerAnswers = [];
+      questionCount++;
+    }
 
     console.log('Question ID:', questionId);
     console.log('Selected option:', selectedOption);
