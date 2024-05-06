@@ -86,6 +86,11 @@ $('#playerAnswers').show().html(
     return `<p>${answer.playerId}: ${emoji}</p>`;
   }).join('')
 );
+
+  // reset timer bar to 0
+  $('#timerBar').val(0);
+  // show next question button
+  $('#next-question-btn').show();
   });
 
   // Listen for the 'options' event
@@ -123,6 +128,24 @@ $('#playerAnswers').show().html(
     startTimer(timerDuration);
   });
 
+  socket.on('next-question-go', function() {
+    // Reset the UI for the next question
+    $('#question').show();
+    ['option1', 'option2', 'option3', 'option4'].forEach(function(optionId) {
+        $('#' + optionId).show();
+    });
+    // Enable all option buttons after starting the next question
+    let optionButtons = ['option1', 'option2', 'option3', 'option4'];
+    optionButtons.forEach(function(optionId) {
+        document.getElementById(optionId).disabled = false;
+    });
+
+    // hide next question button
+    $('#next-question-btn').hide();
+    // hide player answers
+    $('#playerAnswers').hide();
+  });
+
       // Event listener for option selection
       let optionButtons = ['option1', 'option2', 'option3', 'option4'];
 
@@ -158,14 +181,9 @@ $('#playerAnswers').show().html(
       });
     }
 
-    function nextQuestion() {
-      $.post('http://localhost:3000/next-question', function(data) {
-        // Display game UI with questions and options
-        displayQuestion(data.question);
-        displayOptions(data.options);
-        startTimer(data.timerDuration);
-      });
-    }
+function nextQuestion() {
+    socket.emit('next-question');
+}
   
     // Function to display question
     function displayQuestion(question) {

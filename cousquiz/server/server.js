@@ -64,7 +64,7 @@ io.on('connection', (socket) => {
     const { playerId, questionId, selectedOption } = data;
 
     let isCorrect = false;
-    if (selectedOption === questionsOrdered[questionId - 1].answer) {
+    if (selectedOption === questions[questionCount].answer) {
       isCorrect = true;
     }
 
@@ -74,16 +74,29 @@ io.on('connection', (socket) => {
       // Calculate scores
       io.emit('all-answers', playerAnswers);
       playerAnswers = [];
+      if (questionCount === questions.length - 1) {
+        questionCount = 0;
+      }
       questionCount++;
     }
 
     console.log('Question ID:', questionId);
     console.log('Selected option:', selectedOption);
-    console.log('Answer:', questionsOrdered[questionId - 1].answer);
+    console.log('Answer:', questions[questionCount].answer);
     console.log('Is correct:', isCorrect);
 
     // Send 'answer' event back to the client
     socket.emit('answer', { playerId, isCorrect });
+  });
+
+  socket.on('next-question', () => {
+    io.emit('next-question-go', true);
+    io.emit('question', questions[questionCount].question);
+    io.emit('option1', questions[questionCount].option1);
+    io.emit('option2', questions[questionCount].option2);
+    io.emit('option3', questions[questionCount].option3);
+    io.emit('option4', questions[questionCount].option4);
+    io.emit('timer', 10);
   });
 
 });
@@ -127,19 +140,6 @@ app.post('/start-game', (req, res) => {
     io.emit('option3', questions[0].option3);
     io.emit('option4', questions[0].option4);
     io.emit('timer', 10);
-});
-
-// Route for getting next question for all players
-app.post('/next-question', (req, res) => {
-  const { questionId } = req.body;
-  // Send next question and options to clients
-  // Send timer duration to clients
-  io.emit('question', questions[questionId]);
-  io.emit('option1', questions[questionId].option1);
-  io.emit('option2', questions[questionId].option2);
-  io.emit('option3', questions[questionId].option3);
-  io.emit('option4', questions[questionId].option4);
-  io.emit('timer', 10);
 });
 
 server.listen(port, () => {
