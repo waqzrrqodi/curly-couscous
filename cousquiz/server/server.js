@@ -23,6 +23,7 @@ app.use(express.json());
 
 let playersCount = 0;
 let playerIds = ['bob', 'seb', 'joe', 'holgis', 'mike', 'dave', 'dave-clone'];
+let usedPlayerIds = [];
 let playerScores = [];
 
 // WebSocket connection handling
@@ -32,17 +33,41 @@ io.on('connection', (socket) => {
   console.log('Players count:', playersCount);
   io.emit('players-count', playersCount); // Send players count to all clients
   let playerId = playerIds[playersCount - 1];
+  if (usedPlayerIds.includes(playerId)) {
+    playerId = playerIds[playersCount];
+  }
+  usedPlayerIds.push(playerId);
   socket.playerId = playerId;
-  io.emit('player-id', playerId); // Send playerId to client
+  socket.emit('player-id', playerId); // Send playerId to client
 
   console.log('Assigned playerId:', playerId);
 
   socket.on('disconnect', () => {
     playersCount--;
+    usedPlayerIds = usedPlayerIds.filter((id) => id !== playerId);
     console.log('A user disconnected');
     console.log('Players count:', playersCount);
     io.emit('players-count', playersCount); // Send players count to all clients
   });
+
+  socket.on('submit-answer', (data) => {
+    const { playerId, questionId, selectedOption } = data;
+
+    let isCorrect = false;
+    if (selectedOption === questionsOrdered[questionId - 1].answer) {
+      isCorrect = true;
+    }
+
+
+    console.log('Question ID:', questionId);
+    console.log('Selected option:', selectedOption);
+    console.log('Answer:', questionsOrdered[questionId - 1].answer);
+    console.log('Is correct:', isCorrect);
+
+    // Send 'answer' event back to the client
+    socket.emit('answer', { playerId, isCorrect });
+  });
+
 });
 
 // Fetching questions from database and put them in random order for the game in list
@@ -52,7 +77,7 @@ function getQuestions() {
       if (error) {
         reject(error);
       } else {
-        const questions = results.sort(() => Math.random() - 0.5);
+        const questions = results
         resolve(questions);
       }
     });
@@ -60,15 +85,14 @@ function getQuestions() {
 }
 
 let questions = [];
+let questionsOrdered = [];
 // Fetch questions from database and store them in questions array
 // questions[0].question will get the first question from the array
 // questions[0].option1 will get the option for the first question
 // questions[0].answer will get the answer for the first question
 getQuestions().then((fetchedQuestions) => {
-  questions = fetchedQuestions;
-//   console.log('Questions fetched:', questions);
-//   console.log('Questions count:', questions.length);
-//   console.log('First question:', questions[0]);
+  questionsOrdered = fetchedQuestions;
+  questions  = [...questionsOrdered].sort(() => Math.random() - 0.5);
 });
 
 // Route for starting the game
@@ -85,19 +109,6 @@ app.post('/start-game', (req, res) => {
     io.emit('option3', questions[0].option3);
     io.emit('option4', questions[0].option4);
     io.emit('timer', 10);
-});
-
-// Route for submitting answers
-app.post('/submit-answer', (req, res) => {
-  const { playerId, questionId, selectedOption } = req.body;
-  // Logic for checking answer with options
-  // Send response to client if answer is correct and update score
-    // Send response to client if answer is wrong
-    let isCorrect = false;
-    if (selectedOption === questions[questionId].answer) {
-      isCorrect = true;
-    }
-    io.emit('answer', { playerId, isCorrect });
 });
 
 // Route for getting next question for all players

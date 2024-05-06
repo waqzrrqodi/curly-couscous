@@ -2,6 +2,7 @@ $(document).ready(function() {
     // Initialize the WebSocket connection
     const socket = io('http://localhost:3000'); // Connect to the WebSocket server
     let questionId;
+    let playerId;
   
     // Disable Start Game button initially
     $('#start-game-btn').prop('disabled', true);
@@ -31,20 +32,31 @@ $(document).ready(function() {
     });
 
     // Listen for 'player-id' event from the server
-socket.on('player-id', function(playerId) {
+socket.on('player-id', function(id) {
   // Display playerId on the UI
-  $('.username').text(`Username: ${playerId}`);
+  $('.username').text(`Username: ${id}`);
+  playerId = id;
+  // edit server-connect-text to say "waiting for players to join..."
+  $('#server-connect-text').text('Waiting for players to join...');
 }
 );
 
     socket.on('game-started', function() {
   // Handle game start event
   console.log('Game started');
+  $('#lobby').hide();
+        $('#game').show();
 
   // Listen for the 'question' event
   socket.on('question', function(question) {
     // Update the UI with the received question
     $('#question').text(question);
+  });
+
+  socket.on('answer', function(answer) {
+    // Update the UI with the received answer
+    // $('#answer').text(answer);
+    console.log('Answer:', answer);
   });
 
   // Listen for the 'options' event
@@ -70,11 +82,36 @@ socket.on('player-id', function(playerId) {
     $('#option4').text(option4);
   });
 
+    socket.on('questionId', function(id) {
+    // Update the UI with the received questionId
+    console.log('Question ID:', id);
+    questionId = id;
+  });
+
   // Listen for the 'timer' event
   socket.on('timer', function(timerDuration) {
     // Start the timer with the received duration
     startTimer(timerDuration);
   });
+
+      // Event listener for option selection
+      let optionButtons = ['option1', 'option2', 'option3', 'option4'];
+
+      optionButtons.forEach(function(optionId) {
+        let button = document.getElementById(optionId);
+  
+        button.addEventListener('click', function() {
+          
+          // selectedOption is the text content of the button
+          let selectedOption = button.textContent;
+          console.log('Selected option:', selectedOption);
+          console.log('Player ID:', playerId);
+          console.log('Question ID:', questionId);
+          socket.emit('submit-answer', { playerId, questionId, selectedOption });
+        });
+      });
+      
+
 });
   
     // Function to fetch questions and start the game
@@ -84,33 +121,8 @@ socket.on('player-id', function(playerId) {
         displayQuestion(data.question);
         displayOptions(data.options);
         startTimer(data.timerDuration);
-        questionId = data.questionId;
       });
     }
-
-    // Function to get next question
-    function nextQuestion(questionId) {
-      $.post('/next-question', { questionId }, function(data) {
-        // Display next question and options on the UI
-        displayQuestion(data.question);
-        displayOptions(data.options);
-        startTimer(data.timerDuration);
-      });
-    }
-
-    // Event listener for option selection
-    let optionButtons = ['option1', 'option2', 'option3', 'option4'];
-
-    optionButtons.forEach(function(optionId, playerId, questionId) {
-      let button = document.getElementById(optionId);
-
-      button.addEventListener('click', function() {
-        
-        let selectedOption = optionId;
-        socket.emit('submit-answer', { playerId, questionId, selectedOption });
-      });
-    });
-  
   
     // Function to display question
     function displayQuestion(question) {

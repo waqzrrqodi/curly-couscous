@@ -7,15 +7,12 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <link rel="stylesheet" href="style.css">
   <title>Kahoot-like Game</title>
-  <style>
-    /* Your CSS styles for the UI */
-  </style>
 </head>
 <body>
   <section class="section vh-100">
   <div id="lobby" class="columns is-centered is-vcentered full-height flex-center">
   <div class="is-half container is-fluid is-fullhd flex-center columns-align-center">
-    <h1 class="title">Waiting for players...</h1>
+    <h1 class="title" id="server-connect-text">Connecting to server...</h1>
     <h2 id="players" class="is-info"></h2>
     <button id="start-game-btn" class="button is-primary center">Start Game</button>
   </div>
