@@ -15,10 +15,11 @@
     <h1 class="title" id="server-connect-text">Connecting to server...</h1>
     <h2 id="players" class="is-info"></h2>
     <button id="start-game-btn" class="button is-primary center">Start Game</button>
+    <div class="username"></div>
   </div>
 </div>
 </section>
-<div class="username">
+<div class="username" style="display: none;">
   <b></b>
 </div>
 
@@ -47,9 +48,11 @@
     </div>
     <!-- Next question button -->
     <button id="next-question-btn" class="button">Next Question</button>
-    <div id="playerAnswers" style="display: none;"></div>
+    <div id="playerAnswers" class="is-centered" style="display: none;"></div>
+    <div id="playerScores" class="is-centered" style="display: none;"></div>
   </div>
 </section>
+<div id="winner" class="notification is-primary has-text-centered"></div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.3.1/socket.io.min.js"></script>
   <script src="app.js"></script>

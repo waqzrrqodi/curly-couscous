@@ -1,17 +1,25 @@
 $(document).ready(function() {
     // Initialize the WebSocket connection
-    const socket = io('http://localhost:3000'); // Connect to the WebSocket server
+    const socket = io('http://10.32.41.66:3000'); // Connect to the WebSocket server
     let questionId;
     let playerId;
   
     // Disable Start Game button initially
     $('#start-game-btn').prop('disabled', true);
     $('#game').hide();
+    $('#next-question-btn').hide();
+    $('#winner').hide();
   
+
+    if (socket.connected) {
+      $('#server-connect-text').text('Connected to server');
+    }
+
     // Function to enable Start Game button if at least 2 players have joined
     function updateStartButton(playersCount) {
       if (playersCount >= 2) {
         $('#start-game-btn').prop('disabled', false);
+        $('#server-connect-text').text('Waiting for someone to start the game...');
       } else {
         $('#start-game-btn').prop('disabled', true);
       }
@@ -41,8 +49,6 @@ socket.on('player-id', function(id) {
   // Display playerId on the UI
   $('.username').text(`Username: ${id}`);
   playerId = id;
-  // edit server-connect-text to say "waiting for players to join..."
-  $('#server-connect-text').text('Waiting for players to join...');
 }
 );
 
@@ -51,6 +57,7 @@ socket.on('player-id', function(id) {
   console.log('Game started');
   $('#lobby').hide();
         $('#game').show();
+        $('#next-question-btn').hide();
 
   // Listen for the 'question' event
   socket.on('question', function(question) {
@@ -64,7 +71,7 @@ socket.on('player-id', function(id) {
     console.log('Answer:', answer);
   });
 
-  socket.on('all-answers', function(playerAnswers) {
+  socket.on('all-answers', function(playerAnswers, playerScores) {
     // Update the UI with the received answers
     $('#question').hide();
     ['option1', 'option2', 'option3', 'option4'].forEach(function(optionId) {
@@ -85,6 +92,19 @@ $('#playerAnswers').show().html(
     let emoji = answer.isCorrect ? '✔️' : '❌';
     return `<p>${answer.playerId}: ${emoji}</p>`;
   }).join('')
+);
+
+// Display the scores
+// example of how the scores display:
+// Player scores: [
+//   { playerId: 'seb', score: 2 },
+//   { playerId: 'joe', score: 1 }
+// ]
+$('#playerScores').show().html(
+  playerScores.map(score => {
+    return `<p>${score.playerId}: ${score.score}</p>`;
+  }
+).join('')
 );
 
   // reset timer bar to 0
@@ -120,6 +140,14 @@ $('#playerAnswers').show().html(
     // Update the UI with the received questionId
     console.log('Question ID:', id);
     questionId = id;
+  });
+
+  socket.on('win', function(playerId) {
+    // Display the winner
+    $('#winner').text(`Winner: ${playerId}`);
+    $('#winner').show();
+    // Hide the game UI
+    $('#game').hide();
   });
 
   // Listen for the 'timer' event
@@ -173,7 +201,7 @@ $('#playerAnswers').show().html(
   
     // Function to fetch questions and start the game
     function startGame() {
-      $.post('http://localhost:3000/start-game', function(data) {
+      $.post('http://10.32.41.66:3000/start-game', function(data) {
         // Display game UI with questions and options
         displayQuestion(data.question);
         displayOptions(data.options);
@@ -221,10 +249,13 @@ function startTimer(duration) {
     }
 
     if (timer === 0) {
-      clearInterval(interval);
-      // Implement logic for timeout
+      // stop the timer
+      // send empty answer to server
+      // socket.emit('submit-answer', { playerId, questionId, selectedOption: '' });
+      // set progress bar back to 0
+      $progressBar.val(0);
     }
-  }, 10); // Update every 100 milliseconds
+  }, 10); // Update every 10 milliseconds
 }
 
   $('#testButton').click(function() {

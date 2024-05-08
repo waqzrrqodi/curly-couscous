@@ -68,11 +68,24 @@ io.on('connection', (socket) => {
       isCorrect = true;
     }
 
+    if (isCorrect) {
+      let playerScore = playerScores.find((player) => player.playerId === playerId);
+      if (playerScore) {
+        playerScore.score += 1;
+
+        if (playerScore.score === 10) {
+          io.emit('win', playerId);
+        }
+      } else {
+        playerScores.push({ playerId, score: 1 });
+      }
+    }
+
     playerAnswers.push({ playerId, isCorrect});
 
     if (playerAnswers.length === playersCount) {
       // Calculate scores
-      io.emit('all-answers', playerAnswers);
+      io.emit('all-answers', playerAnswers, playerScores);
       playerAnswers = [];
       if (questionCount === questions.length - 1) {
         questionCount = 0;
@@ -140,6 +153,7 @@ app.post('/start-game', (req, res) => {
     io.emit('option3', questions[0].option3);
     io.emit('option4', questions[0].option4);
     io.emit('timer', 10);
+    playerScores = [];
 });
 
 server.listen(port, () => {
