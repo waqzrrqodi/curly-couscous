@@ -27,6 +27,7 @@ let playerIds = ["bob", "seb", "joe", "holgis", "mike", "dave", "dave-clone"];
 let usedPlayerIds = [];
 let playerScores = [];
 let playerAnswers = [];
+let timer = 1000;
 
 // WebSocket connection handling
 io.on("connection", (socket) => {
@@ -88,6 +89,10 @@ io.on("connection", (socket) => {
     if (playerAnswers.length === playersCount) {
       // Calculate scores
       io.emit("all-answers", playerAnswers, playerScores);
+      // Stop the timer-sync
+      io.emit("timer-sync", 0);
+      timer = 0;
+
       playerAnswers = [];
       if (questionCount === questions.length - 1) {
         questionCount = 0;
@@ -111,7 +116,8 @@ io.on("connection", (socket) => {
     io.emit("option2", questions[questionCount].option2);
     io.emit("option3", questions[questionCount].option3);
     io.emit("option4", questions[questionCount].option4);
-    io.emit("timer", 10);
+    io.emit("timer-sync", "start");
+    timerSync();
   });
 });
 
@@ -139,6 +145,17 @@ getQuestions().then((fetchedQuestions) => {
   questionsOrdered = fetchedQuestions;
   questions = [...questionsOrdered].sort(() => Math.random() - 0.5);
 });
+
+function timerSync() {
+  timer = 1000;
+  let interval = setInterval(() => {
+    timer--;
+    io.emit("timer-sync", timer);
+    if (timer === 0) {
+      clearInterval(interval);
+    }
+  }, 10);
+}
 
 // Route for starting the game
 app.post("/start-game", (req, res) => {

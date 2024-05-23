@@ -3,6 +3,8 @@ $(document).ready(function () {
   const socket = io("http://10.32.41.66:3000"); // Connect to the WebSocket server
   let questionId;
   let playerId;
+  let interval;
+  let timer;
 
   // Disable Start Game button initially
   $("#start-game-btn").prop("disabled", true);
@@ -115,9 +117,25 @@ $(document).ready(function () {
         );
 
       // reset timer bar to 0
-      $("#timerBar").val(0);
+      stopTimer();
       // show next question button
       $("#next-question-btn").show();
+    });
+
+    socket.on('timer-sync', function (timerSynced) {
+      // Update the UI with the received timer
+      // Start the timer with the received duration
+      if (timerSynced === "start") {
+        startTimer(10);
+      }
+      else if (timerSynced === 0) {
+        stopTimer();
+      }
+      else {
+        timer = timerSynced;
+      }
+
+
     });
 
     // Listen for the 'options' event
@@ -160,6 +178,7 @@ $(document).ready(function () {
     // Listen for the 'timer' event
     socket.on("timer", function (timerDuration) {
       // Start the timer with the received duration
+      console.log('Timer started')
       startTimer(timerDuration);
     });
 
@@ -209,7 +228,6 @@ $(document).ready(function () {
       // Display game UI with questions and options
       displayQuestion(data.question);
       displayOptions(data.options);
-      startTimer(data.timerDuration);
     });
   }
 
@@ -234,14 +252,14 @@ $(document).ready(function () {
 
   // Function to start timer
   function startTimer(duration) {
-    // Implement timer logic
-    let timer = duration * 100; // Multiply by 10 to get timer in tenths of a second
+    // Implemented timer logic
+    timer = duration * 100; // Multiply by 10 to get timer in tenths of a second
     const $timer = $("#timer");
     const $progressBar = $("#timerBar"); // Get the progress bar
     $timer.text(timer / 100); // Divide by 10 to display timer in seconds
     $progressBar.attr("max", duration * 100); // Set the max value of the progress bar to the duration in tenths of a second
     $progressBar.val(0); // Set the initial value of the progress bar to 0
-    const interval = setInterval(() => {
+    interval = setInterval(() => {
       timer--;
       $timer.text(timer / 100); // Divide by 10 to display timer in seconds
       $progressBar.val(duration * 100 - timer); // Update the value of the progress bar
@@ -255,15 +273,18 @@ $(document).ready(function () {
       if (timer === 0) {
         // stop the timer
         // send empty answer to server
-        // socket.emit('submit-answer', { playerId, questionId, selectedOption: '' });
+        socket.emit('submit-answer', { playerId, questionId, selectedOption: '' });
         // set progress bar back to 0
         $progressBar.val(0);
       }
     }, 10); // Update every 10 milliseconds
   }
 
-  $("#testButton").click(function () {
-    console.log("Test button clicked");
-    startTimer(10); // Start the timer with a duration of 10 seconds
-  });
+  // Function to stop timer
+  function stopTimer() {
+    clearInterval(interval);
+    $("#timer").text('0'); // Reset timer text
+    $("#timerBar").val(0); // Reset progress bar value
+    $("#timerBar").removeClass("is-danger").addClass("is-primary"); // Reset progress bar color
+  }
 });
