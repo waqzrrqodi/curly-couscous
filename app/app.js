@@ -1,6 +1,6 @@
 $(document).ready(function () {
   // Initialize the WebSocket connection
-  const socket = io("http://10.32.41.66:3000"); // Connect to the WebSocket server
+  const socket = io("http://localhost:3000"); // Connect to the WebSocket server
   let questionId;
   let playerId;
   let interval;
@@ -122,20 +122,16 @@ $(document).ready(function () {
       $("#next-question-btn").show();
     });
 
-    socket.on('timer-sync', function (timerSynced) {
+    socket.on("timer-sync", function (timerSynced) {
       // Update the UI with the received timer
       // Start the timer with the received duration
       if (timerSynced === "start") {
         startTimer(10);
-      }
-      else if (timerSynced === 0) {
+      } else if (timerSynced === 0) {
         stopTimer();
-      }
-      else {
+      } else {
         timer = timerSynced;
       }
-
-
     });
 
     // Listen for the 'options' event
@@ -178,7 +174,7 @@ $(document).ready(function () {
     // Listen for the 'timer' event
     socket.on("timer", function (timerDuration) {
       // Start the timer with the received duration
-      console.log('Timer started')
+      console.log("Timer started");
       startTimer(timerDuration);
     });
 
@@ -224,7 +220,7 @@ $(document).ready(function () {
 
   // Function to fetch questions and start the game
   function startGame() {
-    $.post("http://10.32.41.66:3000/start-game", function (data) {
+    $.post("http://localhost:3000/start-game", function (data) {
       // Display game UI with questions and options
       displayQuestion(data.question);
       displayOptions(data.options);
@@ -273,7 +269,11 @@ $(document).ready(function () {
       if (timer === 0) {
         // stop the timer
         // send empty answer to server
-        socket.emit('submit-answer', { playerId, questionId, selectedOption: '' });
+        socket.emit("submit-answer", {
+          playerId,
+          questionId,
+          selectedOption: "",
+        });
         // set progress bar back to 0
         $progressBar.val(0);
       }
@@ -283,7 +283,7 @@ $(document).ready(function () {
   // Function to stop timer
   function stopTimer() {
     clearInterval(interval);
-    $("#timer").text('0'); // Reset timer text
+    $("#timer").text("0"); // Reset timer text
     $("#timerBar").val(0); // Reset progress bar value
     $("#timerBar").removeClass("is-danger").addClass("is-primary"); // Reset progress bar color
   }

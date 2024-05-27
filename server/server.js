@@ -103,6 +103,7 @@ io.on("connection", (socket) => {
     console.log("Question ID:", questionId);
     console.log("Selected option:", selectedOption);
     console.log("Answer:", questions[questionCount].answer);
+    console.log("Answrs:", questions.answer);
     console.log("Is correct:", isCorrect);
 
     // Send 'answer' event back to the client
