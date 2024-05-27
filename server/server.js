@@ -125,6 +125,7 @@ io.on("connection", (socket) => {
 // Fetching questions from database and put them in random order for the game in list
 function getQuestions() {
   return new Promise((resolve, reject) => {
+    // Database structure: id, question, answer, option1, option2, option3, option4
     connection.query("SELECT * FROM questions", (error, results) => {
       if (error) {
         reject(error);
